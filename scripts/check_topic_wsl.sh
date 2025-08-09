@@ -9,7 +9,7 @@ else
   exit 1
 fi
 
-TOPIC="/selected_button"
+TOPIC="/expert_rules"
 
 if [ "${1-}" != "" ]; then
   export ROS_DOMAIN_ID="$1"
