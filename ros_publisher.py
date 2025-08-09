@@ -43,7 +43,7 @@ class ActiveState:
 
 
 class RosPublisher:
-    def __init__(self, active_state: ActiveState, topic_name: str = "/selected_button") -> None:
+    def __init__(self, active_state: ActiveState, topic_name: str = "/expert_rules") -> None:
         self.active_state = active_state
         self.topic_name = topic_name
         self._thread: Optional[threading.Thread] = None
