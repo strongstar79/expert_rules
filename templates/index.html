@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ROS2 버튼 퍼블리셔</title>
+    <style>
+      html, body { height: 100%; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      h1 { font-size: 20px; margin: 12px 16px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: repeat(2, 1fr);
+        gap: 0;
+        width: 100%;
+        height: 100%;
+        justify-items: stretch;
+        align-items: stretch;
+      }
+      .btn {
+        position: relative;
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        width: 100%; height: 100%;
+        padding: 0 12px; padding-bottom: 18px; /* 아래 번호 공간 확보 */
+        border: 1px solid #ccc; border-radius: 0; background: #f7f7f7;
+        cursor: pointer; font-size: 16px; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        box-sizing: border-box;
+      }
+      .btn:hover { background: #eee; }
+      .btn.active { border-color: #b71c1c; background: #ffebee; color: #b71c1c; font-weight: 700; }
+      .item { display: block; width: 100%; height: 100%; margin: 0; }
+      .name { display: block; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; margin: 0 auto; }
+      .id { position: absolute; left: 50%; transform: translateX(-50%); bottom: 4px; font-size: 1em; color: #888; }
+    </style>
+  </head>
+  <body>
+    <h1>ROS2 버튼 퍼블리셔</h1>
+    <div class="grid" id="grid"></div>
+
+    <script id="app-config" type="application/json">{ "names": {{ names|tojson }}, "active": {{ active|tojson }} }</script>
+    <script>
+      const configEl = document.getElementById('app-config');
+      const { names: initialNames, active: initialActive } = JSON.parse(configEl.textContent || '{}');
+
+      function createItem(id, name, isActive) {
+        const container = document.createElement('div');
+        container.className = 'item';
+
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (isActive ? ' active' : '');
+        btn.dataset.id = String(id);
+        btn.innerHTML = `<span class="name">${name}</span> <span class="id">#${id}</span>`;
+        btn.addEventListener('click', async () => {
+          const res = await fetch('/api/activate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+          const data = await res.json();
+          if (data && data.ok) {
+            setActive(id);
+          } else {
+            alert(data.error || '활성화 실패');
+          }
+        });
+        container.appendChild(btn);
+        return container;
+      }
+
+      function setActive(id) {
+        document.querySelectorAll('.btn').forEach(b => {
+          b.classList.toggle('active', Number(b.dataset.id) === id);
+        });
+      }
+
+      function adjustFontSize() {
+        const buttons = document.querySelectorAll('.btn');
+        if (!buttons.length) return;
+
+        // 가장 긴 이름 텍스트 선택
+        let longest = '';
+        document.querySelectorAll('.name').forEach(el => {
+          const t = (el.textContent || '').trim();
+          if (t.length > longest.length) longest = t;
+        });
+        if (longest === '') longest = ' ';
+
+        const refBtn = buttons[0];
+        const cs = getComputedStyle(refBtn);
+        const padLeft = parseFloat(cs.paddingLeft) || 0;
+        const padRight = parseFloat(cs.paddingRight) || 0;
+        const idSpan = refBtn.querySelector('.id');
+        const idWidth = idSpan ? idSpan.offsetWidth : 0;
+        const available = Math.max(0, (refBtn.clientWidth * 0.9) - padLeft - padRight - idWidth);
+
+        // 측정 엘리먼트
+        const meas = document.createElement('span');
+        meas.style.visibility = 'hidden';
+        meas.style.position = 'absolute';
+        meas.style.whiteSpace = 'nowrap';
+        meas.style.fontFamily = cs.fontFamily;
+        meas.style.fontWeight = cs.fontWeight;
+        meas.textContent = longest;
+        document.body.appendChild(meas);
+
+        const maxH = refBtn.clientHeight;
+        // 최대 폰트 크기 캡(확대 시 더 커지지 않도록)
+        const MAX_FONT_PX = 24; // 필요시 조절
+        const upper = Math.max(12, Math.min(MAX_FONT_PX, Math.floor(maxH * 0.6)));
+        let lo = 10, hi = upper, best = lo;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          meas.style.fontSize = mid + 'px';
+          const w = meas.offsetWidth;
+          if (w <= available) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+        }
+        document.body.removeChild(meas);
+
+        buttons.forEach(btn => { btn.style.fontSize = best + 'px'; });
+      }
+
+      function render() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+          const name = initialNames[i - 1] || `Button ${i}`;
+          const item = createItem(i, name, initialActive === i);
+          grid.appendChild(item);
+        }
+        adjustFontSize();
+      }
+
+      render();
+      window.addEventListener('resize', () => { adjustFontSize(); });
+    </script>
+  </body>
+  </html>
+
+
