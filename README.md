@@ -1,7 +1,7 @@
 ROS2 버튼 퍼블리셔 웹앱
 =================================
 
-Flask 기반 웹 서버에서 10개의 버튼을 제공하고, 선택된 버튼 번호를 1초마다 ROS2 토픽(`/selected_button`)으로 발행합니다. 버튼 이름은 웹 UI에서 변경할 수 있습니다.
+Flask 기반 웹 서버에서 10개의 버튼을 제공하고, 선택된 버튼 번호를 1초마다 ROS2 토픽(`/expert_rules`)으로 발행합니다. 버튼 이름은 웹 UI에서 변경할 수 있습니다.
 
 설치 및 실행 (PowerShell)
 ---------------------------------
@@ -27,7 +27,7 @@ python app.py
 ROS2 토픽
 ---------------------------------
 
-- 토픽명: `/selected_button`
+- 토픽명: `/expert_rules`
 - 메시지 타입: `std_msgs/msg/Int32`
 
 비고
@@ -57,6 +57,6 @@ chmod +x scripts/check_topic_wsl.sh
 # 서버와 동일한 ROS_DOMAIN_ID 사용
 ./scripts/check_topic_wsl.sh 0
 ```
-예상 출력: `ros2 topic echo /selected_button`에서 버튼 번호(Int32)가 1초 간격으로 보입니다.
+예상 출력: `ros2 topic echo /expert_rules`에서 버튼 번호(Int32)가 1초 간격으로 보입니다.
 
 
